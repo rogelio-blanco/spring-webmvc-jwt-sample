@@ -7,11 +7,11 @@ import java.io.Serializable;
 
 @Entity
 @Table(name = "vehicles")
-@Data
+@Setter
+@Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = false)
 public class Vehicle extends AbstractAuditableEntity<Long> implements Serializable {
     
     @Column

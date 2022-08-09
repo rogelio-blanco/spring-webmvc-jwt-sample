@@ -1,6 +1,10 @@
 package com.example.demo.security.jwt;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +18,9 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
@@ -24,9 +31,8 @@ import static java.util.stream.Collectors.joining;
 @Slf4j
 @RequiredArgsConstructor
 public class JwtTokenProvider {
-    
     private static final String AUTHORITIES_KEY = "roles";
-    
+
     private final JwtProperties jwtProperties;
     
     private SecretKey secretKey;
@@ -46,13 +52,13 @@ public class JwtTokenProvider {
             claims.put(AUTHORITIES_KEY, authorities.stream().map(GrantedAuthority::getAuthority).collect(joining(",")));
         }
         
-        Date now = new Date();
-        Date validity = new Date(now.getTime() + this.jwtProperties.getValidityInMs());
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime validity = now.plus(this.jwtProperties.getValidityInMs(), ChronoUnit.MILLIS);
         
         return Jwts.builder()
                 .setClaims(claims)
-                .setIssuedAt(now)
-                .setExpiration(validity)
+                .setIssuedAt(Date.from(now.atZone(ZoneOffset.UTC).toInstant()))
+                .setExpiration(Date.from(validity.atZone(ZoneOffset.UTC).toInstant()))
                 .signWith(this.secretKey, SignatureAlgorithm.HS256)
                 .compact();
         
@@ -63,7 +69,7 @@ public class JwtTokenProvider {
         
         Object authoritiesClaim = claims.get(AUTHORITIES_KEY);
         
-        Collection<? extends GrantedAuthority> authorities = authoritiesClaim == null ? AuthorityUtils.NO_AUTHORITIES
+        var authorities = authoritiesClaim == null ? AuthorityUtils.NO_AUTHORITIES
                 : AuthorityUtils.commaSeparatedStringToAuthorityList(authoritiesClaim.toString());
         
         User principal = new User(claims.getSubject(), "", authorities);

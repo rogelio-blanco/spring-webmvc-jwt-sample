@@ -38,16 +38,11 @@ public class SecurityConfig {
                         .antMatchers(HttpMethod.GET, "/vehicles/**").permitAll()
                         .antMatchers(HttpMethod.DELETE, "/vehicles/**").hasRole("ADMIN")
                         .antMatchers(HttpMethod.GET, "/v1/vehicles/**").permitAll()
+                        .antMatchers(HttpMethod.GET, "/v2/vehicles/**").hasAuthority("READ_PRIVILEGE")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtTokenAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class)
                 .build();
-    }
-    
-    @Bean
-    UserDetailsService customUserDetailsService(UserRepository users) {
-        return (username) -> users.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Username: " + username + " not found"));
     }
     
     @Bean

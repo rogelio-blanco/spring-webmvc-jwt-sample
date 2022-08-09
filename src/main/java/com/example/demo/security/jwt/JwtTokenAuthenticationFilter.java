@@ -8,27 +8,29 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.GenericFilterBean;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @RequiredArgsConstructor
 @Slf4j
-public class JwtTokenAuthenticationFilter extends GenericFilterBean {
+public class JwtTokenAuthenticationFilter extends OncePerRequestFilter {
     
     public static final String HEADER_PREFIX = "Bearer ";
     
     private final JwtTokenProvider jwtTokenProvider;
     
     @Override
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain filterChain)
-            throws IOException, ServletException {
+    public void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         
-        String token = resolveToken((HttpServletRequest) req);
+        String token = resolveToken((HttpServletRequest) request);
         log.info("Extracting token from HttpServletRequest: {}", token);
         
         if (token != null && jwtTokenProvider.validateToken(token)) {
@@ -39,7 +41,7 @@ public class JwtTokenAuthenticationFilter extends GenericFilterBean {
             }
         }
         
-        filterChain.doFilter(req, res);
+        filterChain.doFilter(request, response);
     }
     
     private String resolveToken(HttpServletRequest request) {
